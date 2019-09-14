@@ -1,11 +1,19 @@
 import Foundation
 
-struct Transition {
+struct Transition: Equatable {
     let state: Substring
     let node: Node
 }
 
-class Node {
+class Node: Hashable, Equatable {
+    static func == (lhs: Node, rhs: Node) -> Bool {
+        return lhs === rhs
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(ObjectIdentifier(self).hashValue)
+    }
+
     var isFinal = false
     var transitions = [Transition]()
 }
@@ -219,10 +227,125 @@ func recognize(string: Substring, in expression: Node) -> Bool {
 let exp = createRegex()
 print(recognize(string: "ab", in: exp))
 
-let regex = "((a|b))*abb"
+let regex = "(a|b)*abb"
 let exp2 = parseExpression(regex)
 print(recognize(string: "aabb", in: exp2))
 
-let regex2 = "(a(b|c)d)|ef*"
+//let date = Date()
+let regex2 = "(a(b|c)d)*|ef*"
 let exp3 = parseExpression(regex2)
 print(recognize(string: "acdf", in: exp3))
+//let date2 = Date()
+//print("Time taken: \(date2.timeIntervalSince(date))")
+
+func getAllNodes(from expression: Node, into set: Set<Node> = Set<Node>()) -> Set<Node> {
+    var nodes = set
+    nodes.insert(expression)
+    for transition in expression.transitions {
+        if nodes.contains(transition.node) { continue }
+        nodes = getAllNodes(from: transition.node, into: nodes)
+    }
+
+    return nodes
+}
+
+let allNodes = getAllNodes(from: exp2)
+print(allNodes.map(ObjectIdentifier.init))
+
+func generateEpsilonClosure(for node: Node, into set: Set<Node> = Set<Node>()) -> Set<Node> {
+    var epsilonAcessibleNodes = set
+    epsilonAcessibleNodes.insert(node)
+
+    for transition in node.transitions {
+        guard transition.state == "" else { continue }
+        if epsilonAcessibleNodes.contains(transition.node) { continue }
+        epsilonAcessibleNodes = generateEpsilonClosure(for: transition.node, into: epsilonAcessibleNodes)
+    }
+
+    return epsilonAcessibleNodes
+}
+
+func generateEpsilonClosures(for nodes: Set<Node>) -> [Node : Set<Node>] {
+    return Dictionary(uniqueKeysWithValues: nodes.map { ($0, generateEpsilonClosure(for: $0)) })
+}
+
+print(generateEpsilonClosures(for: allNodes).map { "\($0.key) : \($0.value.count)" })
+
+func getInputSymbols(for regex: String) -> Set<Substring> {
+    var symbols = Set<Substring>()
+    for character in regex {
+        switch character {
+        case "|", "*", "(", ")": continue
+        default: symbols.insert(Substring(String(character)))
+        }
+    }
+
+    return symbols
+}
+
+print(getInputSymbols(for: regex))
+
+
+func generateDFA(from state: Set<Node>, symbols: Set<Substring>, into automaton: [Set<Node> : Node] = [Set<Node> : Node]()) -> [Set<Node> : Node] {
+
+    var dfa = automaton
+
+//    let epsilonClosure = generateEpsilonClosure(for: expression)
+    let node = Node()
+    dfa[state] = node
+
+    let allTransitions = state.flatMap { $0.transitions }
+
+    for symbol in symbols {
+        let transitionsForSymbol = allTransitions.filter { $0.state == symbol }
+        if transitionsForSymbol.isEmpty { continue }
+
+        let nextState = transitionsForSymbol
+            .map{ generateEpsilonClosure(for: $0.node) }
+            .reduce(Set<Node>()) { $0.union($1) }
+
+        if dfa[nextState] == nil {
+            dfa = generateDFA(from: nextState, symbols: symbols, into: dfa)
+        }
+
+        node.transitions.append(Transition(state: symbol, node: dfa[nextState]!))
+    }
+
+    return dfa
+}
+
+//let dfa = generateDFA(from: generateEpsilonClosure(for: exp3), symbols: getInputSymbols(for: regex2))
+
+func generateReducedExpression(expression: Node, regex: String) -> Node {
+    let initialSet = generateEpsilonClosure(for: expression)
+    let dfa = generateDFA(from: initialSet, symbols: getInputSymbols(for: regex))
+    print("Nodes in dfa: \(dfa.count)")
+    let initialNode = dfa[initialSet]!
+
+    print(initialNode.transitions.map { $0.state })
+
+    for set in dfa {
+        set.value.isFinal = set.key.map { $0.isFinal }.contains(true)
+    }
+
+    return initialNode
+}
+
+let reducedExp = generateReducedExpression(expression: exp3, regex: regex2)
+
+print("Recognized: \(recognize(string: "acdf", in: reducedExp))")
+
+//func printAllNodes(from expression: Node, into set: Set<Node> = Set<Node>()) -> Set<Node> {
+//    var nodes = set
+//    nodes.insert(expression)
+//    print(expression.transitions.map { $0.state })
+//    for transition in expression.transitions {
+//        if nodes.contains(transition.node) { continue }
+//        nodes = getAllNodes(from: transition.node, into: nodes)
+//    }
+//
+//    return nodes
+//}
+
+print(getAllNodes(from: reducedExp).map { "\($0.isFinal) : \($0.transitions.map { t in t.state })\n" }.reduce("", +))
+
