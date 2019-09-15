@@ -167,7 +167,6 @@ func parseToken(expression: Substring) -> ParsedExpression {
     }
 
     let tokens = generateTokens(expression: expression)
-    print(tokens)
 
     var expressionElements = [ExpressionElement]()
 
@@ -224,20 +223,6 @@ func recognize(string: Substring, in expression: Node) -> Bool {
     return false
 }
 
-let exp = createRegex()
-print(recognize(string: "ab", in: exp))
-
-let regex = "(a|b)*abb"
-let exp2 = parseExpression(regex)
-print(recognize(string: "aabb", in: exp2))
-
-//let date = Date()
-let regex2 = "(a(b|c)d)*|ef*"
-let exp3 = parseExpression(regex2)
-print(recognize(string: "acdf", in: exp3))
-//let date2 = Date()
-//print("Time taken: \(date2.timeIntervalSince(date))")
-
 func getAllNodes(from expression: Node, into set: Set<Node> = Set<Node>()) -> Set<Node> {
     var nodes = set
     nodes.insert(expression)
@@ -248,9 +233,6 @@ func getAllNodes(from expression: Node, into set: Set<Node> = Set<Node>()) -> Se
 
     return nodes
 }
-
-let allNodes = getAllNodes(from: exp2)
-print(allNodes.map(ObjectIdentifier.init))
 
 func generateEpsilonClosure(for node: Node, into set: Set<Node> = Set<Node>()) -> Set<Node> {
     var epsilonAcessibleNodes = set
@@ -269,8 +251,6 @@ func generateEpsilonClosures(for nodes: Set<Node>) -> [Node : Set<Node>] {
     return Dictionary(uniqueKeysWithValues: nodes.map { ($0, generateEpsilonClosure(for: $0)) })
 }
 
-print(generateEpsilonClosures(for: allNodes).map { "\($0.key) : \($0.value.count)" })
-
 func getInputSymbols(for regex: String) -> Set<Substring> {
     var symbols = Set<Substring>()
     for character in regex {
@@ -283,14 +263,10 @@ func getInputSymbols(for regex: String) -> Set<Substring> {
     return symbols
 }
 
-print(getInputSymbols(for: regex))
-
-
 func generateDFA(from state: Set<Node>, symbols: Set<Substring>, into automaton: [Set<Node> : Node] = [Set<Node> : Node]()) -> [Set<Node> : Node] {
 
     var dfa = automaton
 
-//    let epsilonClosure = generateEpsilonClosure(for: expression)
     let node = Node()
     dfa[state] = node
 
@@ -314,15 +290,10 @@ func generateDFA(from state: Set<Node>, symbols: Set<Substring>, into automaton:
     return dfa
 }
 
-//let dfa = generateDFA(from: generateEpsilonClosure(for: exp3), symbols: getInputSymbols(for: regex2))
-
 func generateReducedExpression(expression: Node, regex: String) -> Node {
     let initialSet = generateEpsilonClosure(for: expression)
     let dfa = generateDFA(from: initialSet, symbols: getInputSymbols(for: regex))
-    print("Nodes in dfa: \(dfa.count)")
     let initialNode = dfa[initialSet]!
-
-    print(initialNode.transitions.map { $0.state })
 
     for set in dfa {
         set.value.isFinal = set.key.map { $0.isFinal }.contains(true)
@@ -331,21 +302,21 @@ func generateReducedExpression(expression: Node, regex: String) -> Node {
     return initialNode
 }
 
+
+let exp = createRegex()
+print(recognize(string: "ab", in: exp))
+
+let regex = "(a|b)*abb"
+let exp2 = parseExpression(regex)
+print(recognize(string: "aabb", in: exp2))
+
+let regex2 = "(a(b|c)d)*|ef*"
+let exp3 = parseExpression(regex2)
+print(recognize(string: "acdf", in: exp3))
+
 let reducedExp = generateReducedExpression(expression: exp3, regex: regex2)
 
-print("Recognized: \(recognize(string: "acdf", in: reducedExp))")
+print("Recognized: \(recognize(string: "f", in: reducedExp))")
 
-//func printAllNodes(from expression: Node, into set: Set<Node> = Set<Node>()) -> Set<Node> {
-//    var nodes = set
-//    nodes.insert(expression)
-//    print(expression.transitions.map { $0.state })
-//    for transition in expression.transitions {
-//        if nodes.contains(transition.node) { continue }
-//        nodes = getAllNodes(from: transition.node, into: nodes)
-//    }
-//
-//    return nodes
-//}
-
-print(getAllNodes(from: reducedExp).map { "\($0.isFinal) : \($0.transitions.map { t in t.state })\n" }.reduce("", +))
+print(getAllNodes(from: exp3).map { "\($0.isFinal) : \($0.transitions.map { t in t.state })\n" }.reduce("", +))
 
