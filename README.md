@@ -60,12 +60,12 @@ Description of automation representing: (a|b)*abb
 Each line represents a node.
 
 There are a total of 5 nodes.
-Marked Final		Transition states
-false				["a", "b"]
-false				["a", "b"]
-false				["a", "b"]
-false				["a", "b"]
-true				["a", "b"]
+State    isFinal        Transition states
+0        false        ["b -> 4", "a -> 0"]
+1        true        ["b -> 3", "a -> 0"]
+2        false        ["b -> 3", "a -> 0"]
+3        false        ["b -> 3", "a -> 0"]
+4        false        ["b -> 1", "a -> 0"]
 ```
 
 ## Implementation

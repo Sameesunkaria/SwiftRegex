@@ -332,11 +332,15 @@ struct RegexParser {
 
     func printBasicAutomatonDescription() {
         let allNodes = getAllNodes(from: expression)
+        let nodeNames = Dictionary(uniqueKeysWithValues: allNodes.enumerated().map { ($0.element, $0.offset) })
+
         print("Description of automation representing: \(regex)")
         print("Each line represents a node.\n")
         print("There are a total of \(allNodes.count) nodes.")
-        print("Marked Final\t\tTransition states")
-        print(allNodes.map { "\($0.isFinal)\t\t\t\t\($0.transitions.map { t in t.state })\n" }.reduce("", +))
+        print("State\tisFinal\t\tTransition states")
+        print(allNodes.map {
+            "\(nodeNames[$0]!)\t\t\($0.isFinal)\t\t\($0.transitions.map { t in "\(t.state) -> \(nodeNames[t.node]!)" })\n"
+        }.reduce("", +))
     }
 }
 
