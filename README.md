@@ -1,19 +1,8 @@
 # SwiftRegex
 
-```
-Compiler Construction (UCS802) Assignment 1
-Parsing regular expressions into NFA and DFA
-```
-
-### Created and submitted by:
-```
-Samar Sunkaria
-Student ID: 101503191
-```
-
 ## Introduction 
 
-SwiftRegex is a regular expression parser, written in Swift 5.0. 
+SwiftRegex is a regular expression parser, written in Swift 5.0. It was originally created as part of a university assignment and is hosted here for future reference.
 
 SwiftRegex has a type called `RegexParser`, which is responsible for taking in a regular expression in the form of a string, and converting it into an NFA or further into a DFA. 
 
